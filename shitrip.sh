@@ -1,4 +1,4 @@
-#!/bin/sh
+# vim: filetype=sh
 #
 # This script has two halves, and they're separated by a large turd.
 #
