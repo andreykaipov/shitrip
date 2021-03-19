@@ -38,6 +38,6 @@ get() {
 
 debug "Vendoring shit into '$d'"
 
-get "$d/shit.rip" shit.rip
+get "$d/shit.rip" shit.rip/shit
 
 . shit.rip
