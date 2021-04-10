@@ -24,7 +24,7 @@ debug() {
 
 usage() {
         positionalargs="$(
-                awk -vORS=' ' '
+                awk -v ORS=' ' '
                         /^argr/ { print "<" $2 ">" }
                         /^argo/ { print "[" $2 "]" }
                 ' "$0"
