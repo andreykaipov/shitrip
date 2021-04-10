@@ -1,4 +1,4 @@
-# shitrip
+# shit.rip
 
 It's a shitty shell script to make writing shell more fun, at least for me. :)
 
@@ -22,7 +22,7 @@ command . shit.rip || eval "$(curl -sLo- shit.rip)"
 Here's the contents of [examples/hellobud.sh](./examples/hellobud.sh):
 
 ```sh
-#/bin/sh
+#!/bin/sh
 # shellcheck disable=SC2154
 command . shit.rip || eval "$(wget -qO- shit.rip)"
 
