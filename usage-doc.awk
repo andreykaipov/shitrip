@@ -2,21 +2,16 @@ function capitalize(s) {
      return toupper(substr(s, 1, 1)) substr(s, 2)
 }
 
-BEGIN {
-	description=ARGV[1]
-	inheader=1
-	print ARGV[1]
-}
+BEGIN {}
 
-# overwrites the above argv[1] if a cli description exists
-inheader && /^# description:/ {
-	if (match($0, /# description: .+/)) {
-		k=length("# description: ")
-		description=substr($0, RSTART+k, RLENGTH-k)
+# get the cli description from the second line, after shebang line
+NR==2 {
+	desc=FILENAME
+	if (match($0, /^# .+$/)) {
+		k=length("# ")
+		desc=substr($0, RSTART+k, RLENGTH-k)
 	}
-	print "\033[2A"
-	print description
-	inheader=""
+	print desc
 }
 
 # this just grabs every comment, but since we only use it when a function ends,
