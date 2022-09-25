@@ -14,26 +14,29 @@ NR==2 {
 	print desc
 }
 
-# this just grabs every comment, but since we only use it when a function ends,
-# it effectively grabs the last comment line above a function
-!infn && /^# (.+)/ {
-	gsub(/^ /, "", $0)
+/^[.] / {atsrc=1}
+atsrc && $0=="" {afterheader=1}
+# presumably comments with no indent after the header are fn comments.
+# this treats the last comment before a fn as the command's short help text
+afterheader && /^# (.+)/ {
+	gsub(/^# /, "", $0)
 	fncomment=$0
 }
 
 # either the beginning of multi-line, or one-line fns
 # skip fns that begin with _
 # skip fns that are only one word
-/^([^_][a-z_]+_[a-z_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {
+/^([^_][a-z_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {
 	fnname=$1
+	gsub(/_/, " ", fnname)
 	infn=1
+	vari=1
 }
 
 # the end of a multiline fn or the end of a one-line one
 # is when we print out the usage of the command
 infn && (/^}$/ || /;[ ][}]$/) {
 	infn=0
-	gsub(/_/, " ", fnname)
 	split(fnname, words, " ")
 	group=words[1]
 	if (group != prevgroup) {
@@ -42,12 +45,11 @@ infn && (/^}$/ || /;[ ][}]$/) {
 	}
 	printf "  %s", fnname
 
-	for (x in fn_vars) {
-		split(x, sep, SUBSEP)
-		fn_var=fn_vars[sep[1],sep[2]]
+	for (i=1; i<=length(fn_vars); i++) {
+		fn_var=fn_vars[fnname,i]
 		printf " %s", fn_var
 	}
-	print " ### " fncomment
+	print "###" fncomment
 	delete fn_vars
 	vari=0
 	fncomment=""
