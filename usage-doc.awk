@@ -8,6 +8,7 @@ BEGIN {
 	print ARGV[1]
 }
 
+# overwrites the above argv[1] if a cli description exists
 inheader && /^# description:/ {
 	if (match($0, /# description: .+/)) {
 		k=length("# description: ")
@@ -18,9 +19,11 @@ inheader && /^# description:/ {
 	inheader=""
 }
 
+# this just grabs every comment, but since we only use it when a function ends,
+# it effectively grabs the last comment line above a function
 !infn && /^# (.+)/ {
 	gsub(/^ /, "", $0)
-	comment=$0
+	fncomment=$0
 }
 
 # either the beginning of multi-line, or one-line fns
@@ -32,13 +35,14 @@ inheader && /^# description:/ {
 }
 
 # the end of a multiline fn or the end of a one-line one
+# is when we print out the usage of the command
 infn && (/^}$/ || /;[ ][}]$/) {
 	infn=0
 	gsub(/_/, " ", fnname)
 	split(fnname, words, " ")
 	group=words[1]
 	if (group != prevgroup) {
-		print "###"
+		print "###" # for column to produce empty lines
 		printf "%s commands\n", capitalize(group)
 	}
 	printf "  %s", fnname
@@ -48,10 +52,10 @@ infn && (/^}$/ || /;[ ][}]$/) {
 		fn_var=fn_vars[sep[1],sep[2]]
 		printf " %s", fn_var
 	}
-	print " ### " comment
+	print " ### " fncomment
 	delete fn_vars
 	vari=0
-	comment=""
+	fncomment=""
 	prevgroup=group
 }
 
@@ -104,6 +108,7 @@ infn && /^\s+:\s+"\$\{([a-z0-9_]+)=[^}]*\}"/ {
 	arg="[--"$3$4"]"
 }
 
+# aggregates our vars per fn
 infn && invar {
 	gsub(/_/, "-", arg)
 	fn_vars[fnname,vari] = arg
