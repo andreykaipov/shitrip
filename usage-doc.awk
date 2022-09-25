@@ -106,11 +106,6 @@ infn && /^\s+:\s+"\$\{([a-z0-9_]+)=[^}]*\}"/ {
 
 infn && invar {
 	gsub(/_/, "-", arg)
-	if (match($0, /name: [^, ]+/)) {
-		k=length("name: ")
-		argtmp=substr($0, RSTART+k, RLENGTH-k)
-		arg=substr(arg, 0, 1) argtmp substr(arg, length(arg), 1) # adds brackets back in
-	}
 	fn_vars[fnname,vari] = arg
 	vari++
 	invar=0
