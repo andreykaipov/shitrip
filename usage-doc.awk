@@ -25,8 +25,8 @@ afterheader && /^# (.+)/ {
 
 # either the beginning of multi-line, or one-line fns
 # skip fns that begin with _
-# skip fns that are only one word
-/^([^_][a-z_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {
+# skip fns that are only one letter
+/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {
 	fnname=$1
 	gsub(/_/, " ", fnname)
 	infn=1
