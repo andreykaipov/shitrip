@@ -70,26 +70,6 @@ infn && (/^}$/ || /;[ ][}]$/) {
 # abc=${1?blah blah blah}
 # abc="$1"
 # etc.
-     # infn && /^\s+[a-z0-9_]+="?\$[{][0-9]+[?][^}]*[}]"?/ {
-     # 	invar=1
-     # 	gsub(/\s/, "", $1)
-     # 	arg="<"$1">"
-     # }
-     # # optional positional args, e.g.
-     # # : "${abc=${1-blah blah}}"
-     # # and similar variations from above
-     # infn && /^\s+:\s+"\$[{][a-z0-9_]+=\$([0-9]+|[{][0-9]+[-][^}]*[}])[}]"/ {
-     # 	invar=1
-     # 	arg="["$3"]"
-     # }
-     # # optional positional args, e.g.
-     # # abc=${1-blah blah}
-     # # and similar variations from above
-     # infn && /^\s+[a-z0-9_]+="?\$([{]([0-9]+|[0-9]+[-][^}]*)[}])"?/ {
-     # 	invar=1
-     # 	gsub(/\s/, "", $1)
-     # 	arg="["$1"]"
-     # }
      # # required-style flags, e.g.
      # # : "${abc?some error message}"
      # infn && /^\s+:\s+"\$\{([a-z0-9_]+)[?][^}]*\}"/ {
@@ -120,6 +100,27 @@ infn {
 
 	arg=""
 
+	# required_flag
+	if (match($0, /^\s+: "[$][{][a-z0-9_]+:?[?]"?[^}]*[}]"$/)) {
+		gsub(/^\s*/, "", $1)
+		arg=$1
+		arg=$5
+		gsub(/^\s*[a-z0-9_]+\s*/, "", $0)
+		gsub(/\s*$/, "", $0)
+		if ($0!="") $0="=<...>"
+		arg="--"arg$0
+	}
+	# optional_flag
+	if (match($0, /^\s+: "[$][{][a-z0-9_]+:?="?[^}]*[}]"([ ])/)) {
+		gsub(/^\s*/, "", $1)
+		arg=$1
+		arg=$5
+		gsub(/^\s*[a-z0-9_]+\s*/, "", $0)
+		gsub(/\s*$/, "", $0)
+		if ($0!="") $0="="$0
+		arg="[--"arg$0"]"
+	}
+
 	# required_positional_a
 	if (match($0, /^\s+[a-z0-9_]+="?[$][{]?[0-9]+[?][^}]*[}"]?[}"]?$/)) {
 		gsub(/^\s*/, "", $1)
@@ -129,6 +130,7 @@ infn {
 	if (match($0, /^\s+: "[$][{][a-z0-9_]+="?[$][{]?[0-9]+[?][^}]*[}"]?[}"]?[}]"$/)) {
 		arg="<"$5">"
 	}
+
 	## optional_positional_a, e.g. abc=$1, abc="$2", abc=${3}, abc="${4}"
 	if (match($0, /^\s+[a-z0-9_]+="?[$][{]?[0-9]+[}"]?[}"]?$/)) {
 		gsub(/^\s*/, "", $1)
