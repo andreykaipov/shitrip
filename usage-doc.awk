@@ -89,76 +89,76 @@ infn && (/^}$/ || /;[ ][}]$/) {
 # : "${1=blah}"
 # : "${*=blah}"
 
-# : "${@=blah}" # this is an invalid assignment normally, but takes a special meaning for us
 infn {
-#	if (match($0, /"[$][{]@=[^}]+/)) {
-#		k=length("\"${@=")
-#		arg=substr($0, RSTART+k, RLENGTH-k)
-#		invar=1
-#		arg="["arg"...]"
-#	}
-
 	arg=""
 
-	# required_flag
-	if (match($0, /^\s+: "[$][{][a-z0-9_]+:?[?]"?[^}]*[}]"$/)) {
-		gsub(/^\s*/, "", $1)
-		arg=$1
-		arg=$5
-		gsub(/^\s*[a-z0-9_]+\s*/, "", $0)
-		gsub(/\s*$/, "", $0)
-		if ($0!="") $0="=<...>"
-		arg="--"arg$0
-	}
-	# optional_flag
-	if (match($0, /^\s+: "[$][{][a-z0-9_]+:?="?[^}]*[}]"([ ])/)) {
-		gsub(/^\s*/, "", $1)
-		arg=$1
-		arg=$5
-		gsub(/^\s*[a-z0-9_]+\s*/, "", $0)
-		gsub(/\s*$/, "", $0)
-		if ($0!="") $0="="$0
-		arg="[--"arg$0"]"
-	}
+	gsub(/^\s*/, "", $0)         # trim leading whitespace from each line in a fn
+	gsub(/"/, "", $0)            # trim quotes
+	gsub(/[}]\s+&&.+$/, "}", $0) # trim ending in case its variable declaration ends with &&
 
-	# required_positional_a
-	if (match($0, /^\s+[a-z0-9_]+="?[$][{]?[0-9]+[?][^}]*[}"]?[}"]?$/)) {
-		gsub(/^\s*/, "", $1)
+	# normally something like "${@=blah}" is an invalid assignment, but it
+	# takes a special meaning for us - to indicate variable usage
+	if (match($0, /[$][{]@=[^}]+/)) {
+		k=length("${@=")
+		arg=substr($0, RSTART+k, RLENGTH-k)
+		invar=1
+		arg="["arg"...]"
+	}
+	# required_positional_a, e.g.
+	# abc=${123?xyz}
+	else if (match($0, /^[a-z0-9_]+=[$][{][0-9]+:?[?].*[}]$/)) {
 		arg="<"$1">"
 	}
-	# required_positional_b, colon variant of a
-	if (match($0, /^\s+: "[$][{][a-z0-9_]+="?[$][{]?[0-9]+[?][^}]*[}"]?[}"]?[}]"$/)) {
-		arg="<"$5">"
+	# required_positional_b, colon variant of a, e.g.
+	# : ${abc=${123?xyz}}
+	else if (match($0, /^: [$][{][a-z0-9_]+:?=[$][{][0-9]+:?[?].*[}][}]$/)) {
+		arg="<"$4">"
 	}
-
-	## optional_positional_a, e.g. abc=$1, abc="$2", abc=${3}, abc="${4}"
-	if (match($0, /^\s+[a-z0-9_]+="?[$][{]?[0-9]+[}"]?[}"]?$/)) {
-		gsub(/^\s*/, "", $1)
+	# optional_positional_a, e.g.
+	# abc=$1 or abc=${1}
+	else if (match($0, /^[a-z0-9_]+=[$][{]?[0-9]+[}]?$/)) {
 		arg="["$1"]"
 	}
-	# optional_positional_b, e.g. abc=${1-xyz}, abc="${1-xyz}", abc=${1:-xyz}, abc="${1:-xyz}"
-	if (match($0, /^\s+[a-z0-9_]+="?[$][{]?[0-9]+:?-[^}]*[}"][}"]?$/)) {
-		gsub(/^\s*/, "", $1)
+	# optional_positional_b, i.e. colon variant of a, e.g.
+	# : ${abc=$1} or : ${abc=${1}}
+	else if (match($0, /^: [$][{][a-z0-9_]+=[$][{]?[0-9]+[}]?[}]$/)) {
+		arg="["$4"]"
+	}
+	# optional_positional_c, e.g.
+	# abc=${1-xyz}
+	else if (match($0, /^[a-z0-9_]+=[$][{][0-9]+:?[-].*[}]$/)) {
 		arg=$1
-		gsub(/^\s*[a-z0-9_]+\s+[0-9]+\s*/, "", $0)
-		gsub(/\s*$/, "", $0)
-		arg="["arg"="$0"]"
+		split($0, xxxval, /[-}]/)
+		val=xxxval[2]
+		arg="["arg"="val"]"
 	}
-	# optional_positional_c, i.e. colon variant of a
-	if (match($0, /^\s+: "[$][{][a-z0-9_]+="?[$][{]?[0-9]+[}"]?[}"]?[}]"$/)) {
-		arg="["$5"]"
+	# optional_positional_d, colon variant of optional_positional_c, e.g.
+	# : ${abc=${1-xyz}}
+	else if (match($0, /^: [$][{][a-z0-9_]+=[$][{][0-9]+:?[-].*[}][}]$/)) {
+		arg=$4
+		split($0, xxxval, /[-}]/)
+		val=xxxval[2]
+		arg="["arg"="val"]"
 	}
-	## optional_positional_d, i.e. colon variant of b
-	if (match($0, /^\s+: "[$][{][a-z0-9_]+="?[$][{]?[0-9]+:?-[^}]*[}"][}"]?[}]"$/)) {
-		gsub(/^\s*/, "", $1)
-		arg=$5
-		gsub(/^\s*[a-z0-9_]+\s+[0-9]+\s*/, "", $0)
-		gsub(/\s*$/, "", $0)
-		arg="["arg"="$0"]"
+	# required_flag, e.g.
+	# : ${abc?xyz}
+	else if (match($0, /^: [$][{][a-z0-9_]+:?[?].*[}]$/)) {
+		arg=$4
+		split($0, xxxval, /[?}]/)
+		val=xxxval[2]
+		if (val!="") val="=..."
+		arg="--" arg val
 	}
-	#
-	# e.g. : ${abc=$1}
-	#infn && /^\s+:\s+"\$[{][a-z0-9_]+=\$([0-9]+|[{][0-9]+[-][^}]*[}])[}]"/ {
+	# optional_flag, e.g.
+	# : ${abc=...}
+	# note this will match any colon assignment style pattern, so must be last
+	else if (match($0, /^: [$][{][a-z0-9_]+:?[=].*[}]$/)) {
+		arg=$4
+		split($0, xxxval, /[=}]/)
+		val=xxxval[2]
+		if (val!="") val="="val
+		arg="[--" arg val "]"
+	}
 }
 
 # aggregates our vars per fn
