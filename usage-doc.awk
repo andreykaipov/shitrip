@@ -17,8 +17,8 @@ NR==2 {
 /^[.] / {atsrc=1}
 atsrc && $0=="" {afterheader=1}
 # presumably comments with no indent after the header are fn comments.
-# this treats the last comment before a fn as the command's short help text
-afterheader && /^# (.+)/ {
+# this treats the first comment before a fn as the command's short help text
+afterheader && !fncomment && /^# (.+)/ {
 	gsub(/^# /, "", $0)
 	fncomment=$0
 }
