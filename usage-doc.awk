@@ -130,6 +130,7 @@ infn {
 		arg=$1
 		split($0, xxxval, /[-}]/)
 		val=xxxval[2]
+		if (substr(val, 0, 1)=="$") val="..."
 		arg="["arg"="val"]"
 	}
 	# optional_positional_d, colon variant of optional_positional_c, e.g.
@@ -138,6 +139,7 @@ infn {
 		arg=$4
 		split($0, xxxval, /[-}]/)
 		val=xxxval[2]
+		if (substr(val, 0, 1)=="$") val="..."
 		arg="["arg"="val"]"
 	}
 	# required_flag, e.g.
@@ -156,7 +158,7 @@ infn {
 		arg=$4
 		split($0, xxxval, /[=}]/)
 		val=xxxval[2]
-		if (val!="") val="="val
+		if (val!="" && substr(val, 0, 1)=="$") val="=..."
 		arg="[--" arg val "]"
 	}
 }
