@@ -1,8 +1,4 @@
-function capitalize(s) {
-     return toupper(substr(s, 1, 1)) substr(s, 2)
-}
-
-BEGIN {}
+# Generates an unformatted usage function for a POSIX shell script
 
 # get the cli description from the second line, after shebang line
 NR==2 {
@@ -41,7 +37,7 @@ infn && (/^}$/ || /;[ ][}]$/) {
 	group=words[1]
 	if (group != prevgroup) {
 		print "###" # for column to produce empty lines
-		printf "%s commands\n", capitalize(group)
+		printf "%s commands\n", toupper(substr(group, 1, 1)) substr(group, 2)
 	}
 	printf "  %s", fnname
 
@@ -55,39 +51,6 @@ infn && (/^}$/ || /;[ ][}]$/) {
 	fncomment=""
 	prevgroup=group
 }
-
-# require-style args, e.g.
-# : "${abc=$1}"
-# : "${abc=${1?}}"
-# : "${abc=${1?blah blah blah}}"
-# infn && /^\s+:\s+"\$[{][a-z0-9_]+=\$([0-9]+|[{][0-9]+[?][^}]*[}])[}]"/ {
-# 	invar=1
-# 	arg="<"$3">"
-# }
-# different require-style args, e.g.
-# abc=$1
-# abc=${1?}
-# abc=${1?blah blah blah}
-# abc="$1"
-# etc.
-     # # required-style flags, e.g.
-     # # : "${abc?some error message}"
-     # infn && /^\s+:\s+"\$\{([a-z0-9_]+)[?][^}]*\}"/ {
-     # 	invar=1
-     # 	arg="--"$3"=<"$4">"
-     # }
-     # # optional-style flags, e.g.
-     # # : "${abc=this is some default value}"
-     # infn && /^\s+:\s+"\$\{([a-z0-9_]+)=[^}]*\}"/ {
-     # 	invar=1
-     # 	if (match($4, /[$]/)) $4="..." # if the default value has a $(...)
-     # 	if ($4 != "") $4="="$4 # only include an = if there's a default value
-     # 	arg="[--"$3$4"]"
-     # }
-# : "${abc-blah blah}" # this kind of variable expansion is a noop, so not handled
-# the following are invalid assignments
-# : "${1=blah}"
-# : "${*=blah}"
 
 infn {
 	arg=""
