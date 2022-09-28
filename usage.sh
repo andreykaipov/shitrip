@@ -1,12 +1,11 @@
 #!/bin/sh
-# shellcheck disable=SC2016
 
-: "${usagedoc_awksrc:=$(cat usage-doc.awk)}"
+: "${usage_awk_src:=$(cat usage.awk)}"
 
 usage() {
-        input=$1
+        input=${1-$0}
 
-        rawusage="$(awk -F '[():{}=?#,]' "$usagedoc_awksrc" "$input")"
+        rawusage="$(awk -F '[()${}:=?]' "$usage_awk_src" "$input")"
         groups="$(printf "%s" "$rawusage" | awk '/^.+ commands$/ {print $1}')"
 
         printf "%s" "$rawusage" | head -n1
@@ -16,7 +15,7 @@ usage() {
         for group in $groups; do
                 printf "%s" "$rawusage" |
                         awk -vg="$group" '$1==g,$0=="###"{print $0}' |
-                        column -t -s '###'
+                        column -t -s '#'
         done
 }
 

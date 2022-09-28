@@ -1,4 +1,4 @@
-# Generates an unformatted usage function for a POSIX shell script
+# Generates an unformatted usage function from a POSIX shell script
 
 # get the cli description from the second line, after shebang line
 NR==2 {
@@ -47,7 +47,6 @@ infn && (/^}$/ || /;[ ][}]$/) {
 	}
 	print "###" fncomment
 	delete fn_vars
-	vari=0
 	fncomment=""
 	prevgroup=group
 }
@@ -121,7 +120,10 @@ infn {
 		arg=$4
 		split($0, xxxval, /[=}]/)
 		val=xxxval[2]
-		if (val!="" && substr(val, 0, 1)=="$") val="=..."
+		if (val!="") {
+			if (substr(val, 0, 1)=="$") val="..."
+			val="="val
+		}
 		arg="[--" arg val "]"
 	}
 }
