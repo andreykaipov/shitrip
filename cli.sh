@@ -2,7 +2,7 @@
 
 debug() {
         if [ -z "$DEBUG" ]; then return; fi
-        if [ -n "$shitval" ]; then name="$f (shit)"; fi
+        if [ -n "$clishval" ]; then name="$f (clish)"; fi
         # current pid, parent pid
         printf "%b\n" "| ${name-$f} [$$,$PPID] | $*" >&2
 }
@@ -16,7 +16,7 @@ fullpath() { echo "$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"; }
 # 5. parse flags and positional args
 # 6. execute the cmd
 wrapper() {
-        fns="$(awk -F'[()]' '/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {print $1"_"}' "$f")"
+        fns="$(awk -F'[()]' '/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {print $1"_"}' "$f" cli.sh)"
         cmd="$(echo "$* " | tr ' ' _ | grep -o "$fns" | sed 's/.$//' || :)"
         debug "user cmd: <$*>"
         debug "fns* to match user cmd cmd against: \n$fns"
@@ -49,6 +49,7 @@ wrapper() {
                                 break
                                 ;;
                         --*)
+                                # consider using ## and %% param substitution
                                 optval="$(echo "$1" | cut -c3-)"       # remove --
                                 opt="$(echo "$optval" | cut -d= -f1)"  # get flag
                                 val="$(echo "$optval" | cut -d= -f2-)" # get after first =
@@ -77,15 +78,15 @@ wrapper() {
 f=$0
 fname=$(basename "$f")
 fslug=$(printf "%s" "$fname" | tr -c -- 'a-zA-Z0-9_' _)
-shitvar=__shit_$fslug
-shitval=$(eval "echo \"\$$shitvar\"")
+clishvar=__clish_$fslug
+clishval=$(eval "echo \"\$$clishvar\"")
 debug "sourced this lib"
-if [ -n "$shitval" ]; then
-        debug "but it was already shit"
+if [ -n "$clishval" ]; then
+        debug "but clish is already available"
         return
 fi
 
-exec env "$shitvar=1" sh -s -c "$(
+exec env "$clishvar=1" sh -s -c "$(
         cat <<'EOF'
         . "$0"
         debug "running modified script inside execed shell"
