@@ -60,4 +60,10 @@ EOF
         test "$expected" = "$actual"
 }
 
+echo "non-minified bundle"
+main "$@"
+echo
+
+echo "minified bundle"
+export minify=1
 main "$@"
