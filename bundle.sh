@@ -1,7 +1,5 @@
 #!/bin/sh
 
-: "${minify=}"
-
 minifyawk() {
         if [ -z "$minify" ]; then cat && return; fi
         cat |
@@ -35,11 +33,11 @@ BUNDLE
 $f() {
 ${f}awk=\$(
         cat <<'EOF'
-$(minifyawk <$f.awk)
+$(minifyawk <fns/$f.awk)
 EOF
 :
 )
-$(cat $f.sh)
+$(cat fns/$f.sh)
 }
 BUNDLE
         done
@@ -51,4 +49,6 @@ BUNDLE
         fi
 }
 
+: "${minify=}"
+set -eu
 main
