@@ -1,13 +1,13 @@
 #!/bin/sh
 
-: "${usage_awk_src=$(cat usage.awk)}"
+: "${usageawk=$(cat usage.awk)}"
 input=${1-$0}
 clishf=
 if [ -n "$CLISH_EXTRAS" ]; then
         clishf=cli.sh
 fi
 
-rawusage="$(awk -F '[()${}:=?]' "$usage_awk_src" "$input" "$clishf")"
+rawusage="$(awk -F '[()${}:=?]' "$usageawk" "$input" "$clishf")"
 groups="$(printf "%s" "$rawusage" | awk '/^.+ commands$/ {print $1}')"
 
 printf "%s" "$rawusage" | head -n1
