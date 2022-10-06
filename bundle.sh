@@ -21,4 +21,4 @@ $(cat $f.sh)
 BUNDLE
 done
 
-chmod +x bin/bundle
+cat cli.sh >>bin/bundle

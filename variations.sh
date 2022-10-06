@@ -2,7 +2,6 @@
 # Example CLI showcasing different variations, doubles as test cases too
 
 . ./bin/bundle
-. ./shit.sh
 
 ####
 #### optional positionals
