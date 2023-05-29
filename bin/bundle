@@ -1,180 +1,156 @@
-#!/bin/sh
-# bundle
-usage_awk_src=$(
-        cat <<'EOF'
-# Generates an unformatted usage function from a POSIX shell script
-
-# get the cli description from the second line, after shebang line
-NR==2 {
-	desc=FILENAME
-	if (match($0, /^# .+$/)) {
-		k=length("# ")
-		desc=substr($0, RSTART+k, RLENGTH-k)
-	}
-	print desc
-}
-
-/^[.] / {atsrc=1}
-atsrc && $0=="" {afterheader=1}
-# presumably comments with no indent after the header are fn comments.
-# this treats the first comment before a fn as the command's short help text
-afterheader && !fncomment && /^# (.+)/ {
-	gsub(/^# /, "", $0)
-	fncomment=$0
-}
-
-# either the beginning of multi-line, or one-line fns
-# skip fns that begin with _
-# skip fns that are only one letter
-/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {
-	fnname=$1
-	gsub(/_/, " ", fnname)
-	infn=1
-	vari=1
-}
-
-# the end of a multiline fn or the end of a one-line one
-# is when we print out the usage of the command
-infn && (/^}$/ || /;[ ][}]$/) {
-	infn=0
-	split(fnname, words, " ")
-	group=words[1]
-	if (group != prevgroup) {
-		print "###" # for column to produce empty lines
-		printf "%s commands\n", toupper(substr(group, 1, 1)) substr(group, 2)
-	}
-	printf "  %s", fnname
-
-	for (i=1; i<vari; i++) {
-		fn_var=fn_vars[fnname,i]
-		printf " %s", fn_var
-	}
-	print "###" fncomment
-	delete fn_vars
-	fncomment=""
-	prevgroup=group
-}
-
-infn {
-	arg=""
-
-	gsub(/^\s*/, "", $0)         # trim leading whitespace from each line in a fn
-	gsub(/"/, "", $0)            # trim quotes
-	gsub(/[}]\s+&&.+$/, "}", $0) # trim ending in case its variable declaration ends with &&
-
-	# normally something like "${@=blah}" is an invalid assignment, but it
-	# takes a special meaning for us - to indicate variable usage
-	if (match($0, /[$][{]@=[^}]+/)) {
-		k=length("${@=")
-		arg=substr($0, RSTART+k, RLENGTH-k)
-		invar=1
-		arg="["arg"...]"
-	}
-	# required_positional_a, e.g.
-	# abc=${123?xyz}
-	else if (match($0, /^[a-z0-9_]+=[$][{][0-9]+:?[?].*[}]$/)) {
-		arg="<"$1">"
-	}
-	# required_positional_b, colon variant of a, e.g.
-	# : ${abc=${123?xyz}}
-	else if (match($0, /^: [$][{][a-z0-9_]+:?=[$][{][0-9]+:?[?].*[}][}]$/)) {
-		arg="<"$4">"
-	}
-	# optional_positional_a, e.g.
-	# abc=$1 or abc=${1}
-	else if (match($0, /^[a-z0-9_]+=[$][{]?[0-9]+[}]?$/)) {
-		arg="["$1"]"
-	}
-	# optional_positional_b, i.e. colon variant of a, e.g.
-	# : ${abc=$1} or : ${abc=${1}}
-	else if (match($0, /^: [$][{][a-z0-9_]+=[$][{]?[0-9]+[}]?[}]$/)) {
-		arg="["$4"]"
-	}
-	# optional_positional_c, e.g.
-	# abc=${1-xyz}
-	else if (match($0, /^[a-z0-9_]+=[$][{][0-9]+:?[-].*[}]$/)) {
-		arg=$1
-		split($0, xxxval, /[-}]/)
-		val=xxxval[2]
-		if (substr(val, 0, 1)=="$") val="..."
-		arg="["arg"="val"]"
-	}
-	# optional_positional_d, colon variant of optional_positional_c, e.g.
-	# : ${abc=${1-xyz}}
-	else if (match($0, /^: [$][{][a-z0-9_]+=[$][{][0-9]+:?[-].*[}][}]$/)) {
-		arg=$4
-		split($0, xxxval, /[-}]/)
-		val=xxxval[2]
-		if (substr(val, 0, 1)=="$") val="..."
-		arg="["arg"="val"]"
-	}
-	# required_flag, e.g.
-	# : ${abc?xyz}
-	else if (match($0, /^: [$][{][a-z0-9_]+:?[?].*[}]$/)) {
-		arg=$4
-		split($0, xxxval, /[?}]/)
-		val=xxxval[2]
-		if (val!="") val="=..."
-		arg="--" arg val
-	}
-	# optional_flag, e.g.
-	# : ${abc=...}
-	# note this will match any colon assignment style pattern, so must be last
-	else if (match($0, /^: [$][{][a-z0-9_]+:?[=].*[}]$/)) {
-		arg=$4
-		split($0, xxxval, /[=}]/)
-		val=xxxval[2]
-		if (val!="") {
-			if (substr(val, 0, 1)=="$") val="..."
-			val="="val
-		}
-		arg="[--" arg val "]"
-	}
-}
-
-# aggregates our vars per fn
-infn && arg {
-	gsub(/_/, "-", arg)
-	fn_vars[fnname,vari] = arg
-	vari++
-	invar=0
+usage(){
+usageawk=$(cat \
+<<'EOF'
+NR==2{desc=FILENAME
+if(match($0,/^# .+$/)){k=length("# ")
+desc=substr($0,RSTART+k,RLENGTH-k)
+}print desc
+}/^[.] /{atsrc=1}atsrc&&$0==""{afterheader=1}afterheader&&!fncomment&&(/^# (.+)/||/^#$/){gsub(/^# /,"",$0)
+fncomment=$0
+}/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/{fnname=$1
+gsub(/_/," ",fnname)
+infn=1
+vari=1
+}infn&&(/^}$/||/;[ ][}]$/){infn=0
+split(fnname,words," ")
+group=words[1]
+if(group != prevgroup){print "###"
+printf "%s commands\n",toupper(substr(group,1,1))substr(group,2)
+}printf "  %s",fnname
+for(i=1; i<vari; i++){fn_var=fn_vars[fnname,i]
+printf " %s",fn_var
+}print "###" fncomment
+delete fn_vars
+fncomment=""
+prevgroup=group
+}infn{arg=""
+gsub(/^\s*/,"",$0)       
+gsub(/"/,"",$0)          
+gsub(/[}]\s+&&.+$/,"}",$0)
+if(match($0,/[$][{]@=[^}]+/)){k=length("${@=")
+arg=substr($0,RSTART+k,RLENGTH-k)
+invar=1
+arg="["arg"...]"
+}else if(match($0,/^[a-z0-9_]+=[$][{][0-9]+:?[?].*[}]$/)){arg="<"$1">"
+}else if(match($0,/^: [$][{][a-z0-9_]+:?=[$][{][0-9]+:?[?].*[}][}]$/)){arg="<"$4">"
+}else if(match($0,/^[a-z0-9_]+=[$][{]?[0-9]+[}]?$/)){arg="["$1"]"
+}else if(match($0,/^: [$][{][a-z0-9_]+=[$][{]?[0-9]+[}]?[}]$/)){arg="["$4"]"
+}else if(match($0,/^[a-z0-9_]+=[$][{][0-9]+:?[-].*[}]$/)){arg=$1
+split($0,xxxval,/[-}]/)
+val=xxxval[2]
+if(substr(val,0,1)=="$")val="..."
+arg="["arg"="val"]"
+}else if(match($0,/^: [$][{][a-z0-9_]+=[$][{][0-9]+:?[-].*[}][}]$/)){arg=$4
+split($0,xxxval,/[-}]/)
+val=xxxval[2]
+if(substr(val,0,1)=="$")val="..."
+arg="["arg"="val"]"
+}else if(match($0,/^: [$][{][a-z0-9_]+:?[?].*[}]$/)){arg=$4
+split($0,xxxval,/[?}]/)
+val=xxxval[2]
+if(val!="")val="=..."
+arg="--" arg val
+}else if(match($0,/^: [$][{][a-z0-9_]+:?[=].*[}]$/)){arg=$4
+split($0,xxxval,/[=}]/)
+val=xxxval[2]
+if(val!=""){if(substr(val,0,1)=="$")val="..."
+val="="val
+}arg="[--" arg val "]"
+}}infn&&arg{gsub(/_/,"-",arg)
+fn_vars[fnname,vari] = arg
+vari++
+invar=0
 }
 EOF
-)
-#!/bin/sh
-
-: "${usage_awk_src:=$(cat usage.awk)}"
-
-usage() {
-        input=${1-$0}
-
-        rawusage="$(awk -F '[()${}:=?]' "$usage_awk_src" "$input")"
-        groups="$(printf "%s" "$rawusage" | awk '/^.+ commands$/ {print $1}')"
-
-        printf "%s" "$rawusage" | head -n1
-        printf '\n'
-
-        # pipe each section into column instead of the whole thing at once
-        for group in $groups; do
-                printf "%s" "$rawusage" |
-                        awk -vg="$group" '$1==g,$0=="###"{print $0}' |
-                        column -t -s '#'
-        done
+:)
+: "${usageawk=$(cat usage.awk)}"
+input=${1-$0}
+clishf=
+if [ -n "$CLISH_EXTRAS" ];then
+clishf=bin/bundle
+fi
+rawusage="$(awk -F '[()${}:=?]' "$usageawk" "$input" "$clishf")"
+groups="$(printf "%s" "$rawusage"|awk '/^.+ commands$/ {print $1}')"
+printf "%s" "$rawusage"|head -n1
+printf '\n'
+for group in $groups;do
+printf "%s" "$rawusage"|awk -vg="$group" '$1==g,$0=="###"{print $0}'|column -t -s '#'
+done
 }
-help_awk_src=$(
-        cat <<'EOF'
-# Grabs the comments block before a given function `fn`
-/^#$/ || /^# .+$/ { comments[i++]=substr($0, 3) }
-$1 == fn { exit }
-/^[^#]/ { delete comments; i=1 }
-END { for (i in comments) print comments[i] }
+help(){
+helpawk=$(cat \
+<<'EOF'
+/^#$/||/^# .+$/{ comments[i++]=substr($0,3)}$1 == fn{ exit }/^[^#]/{ delete comments; i=1 }END{ for(i in comments)print comments[i] }
 EOF
-)
-#!/bin/sh
-
-: "${help_awk_src=$(cat help.awk)}"
-
-help() {
-        input=${1-$0}
-        awk -F '[()${}:=?]' -v fn="${fn?}" "$help_awk_src" "$input"
+:)
+: "${helpawk=$(cat help.awk)}"
+input=${1-$0}
+awk -F '[()${}:=?]' -v fn="${fn?}" "$helpawk" "$input"
 }
+debug(){
+if [ -z "$DEBUG" ];then return;fi
+if [ -n "$clishval" ];then name="$f (clish)";fi
+printf "%b\n" "| ${name-$f} [$$,$PPID] | $*" >&2
+}
+fullpath(){ echo "$(cd "$(dirname "$1")"&&pwd -P)/$(basename "$1")";}
+wrapper(){
+fns="$(awk -F'[()]' '/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {print $1"_"}' "$f")"
+cmd="$(echo "$* "|tr ' ' _|grep -o "$fns"|sed 's/.$//'||:)"
+debug "user cmd: <$*>"
+debug "fns* to match user cmd cmd against: \n$fns"
+debug "matched cmd: $cmd"
+if [ -z "$cmd" ];then usage&&exit 1;fi
+notargs="$(echo "$cmd"|awk -F_ '{print NF}')"
+shift "$notargs"
+i=0
+numargs="$#"
+while [ $i -lt "$numargs" ];do
+case "$1" in
+--)shift
+x=$((numargs-1-i))
+while [ $x -gt 0 ];do
+set -- "$@" "$1"
+shift
+x=$((x-1))
+done
+break
+;;
+--*)\
+optval="$(echo "$1"|cut -c3-)"
+opt="$(echo "$optval"|cut -d= -f1)"
+val="$(echo "$optval"|cut -d= -f2-)"
+if [ -z "$val" ];then val='';fi
+if [ "$opt" = "$val" ];then val=1;fi
+opt="$(echo "$opt"|tr - _)"
+eval "$opt='$val'"
+debug "Flag $opt=$val"
+;;
+*)set -- "$@" "$1"
+esac
+shift
+i=$((i+1))
+done
+debug "New \$*: $*"
+if [ -n "$help" ];then
+fn="$cmd" help
+return
+fi
+$cmd "$@"
+}
+f=$0
+fname=$(basename "$f")
+fslug=$(printf "%s" "$fname"|tr -c -- 'a-zA-Z0-9_' _)
+clishvar=__clish_$fslug
+clishval=$(eval "echo \"\$$clishvar\"")
+debug "sourced this lib"
+if [ -n "$clishval" ];then
+debug "but clish is already available"
+return
+fi
+exec env "$clishvar=1" sh -s -c "$(cat \
+<<'EOF'
+        . "$0"
+        debug "running modified script inside execed shell"
+        wrapper "$@"
+EOF
+:)" "$0" "$@"

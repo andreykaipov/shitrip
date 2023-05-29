@@ -16,7 +16,7 @@ fullpath() { echo "$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"; }
 # 5. parse flags and positional args
 # 6. execute the cmd
 wrapper() {
-        fns="$(awk -F'[()]' '/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {print $1"_"}' "$f" cli.sh)"
+        fns="$(awk -F'[()]' '/^([^_][a-z0-9_]+)[(][)][ ][{]($|[ ].+;[ ][}]$)/ {print $1"_"}' "$f")"
         cmd="$(echo "$* " | tr ' ' _ | grep -o "$fns" | sed 's/.$//' || :)"
         debug "user cmd: <$*>"
         debug "fns* to match user cmd cmd against: \n$fns"
@@ -67,6 +67,9 @@ wrapper() {
                 i=$((i + 1))
         done
 
+        debug "New \$*: $*"
+        usagedef="$(help | grep '^args:' | cut -d' ' -f2-)"
+
         if [ -n "$help" ]; then
                 fn="$cmd" help
                 return
@@ -92,4 +95,5 @@ exec env "$clishvar=1" sh -s -c "$(
         debug "running modified script inside execed shell"
         wrapper "$@"
 EOF
+        :
 )" "$0" "$@"

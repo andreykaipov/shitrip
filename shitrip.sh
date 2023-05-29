@@ -1,3 +1,4 @@
+#!/bin/sh
 # vim: filetype=sh
 #
 # This script has two halves, and they're separated by a large turd.
@@ -19,7 +20,7 @@ debug() {
         if [ -z "$DEBUG" ]; then return; fi
         if [ -n "$shitval" ]; then name="*$f*"; fi
         # current pid, parent pid
-        >&2 echo "| ${name-$f} [$$,$PPID] | $*"
+        echo >&2 "| ${name-$f} [$$,$PPID] | $*"
 }
 
 usage() {
@@ -36,11 +37,12 @@ EOF
 }
 
 argr() {
-        name="$1"; shift
+        name="$1"
+        shift
         if [ -z "$1" ]; then
-                >&2 usage
-                >&2 echo
-                >&2 echo "Missing required positional argument: $name"
+                usage >&2
+                echo >&2
+                echo >&2 "Missing required positional argument: $name"
                 exit 1
         fi
         eval "$name=\"\$1\""
@@ -48,7 +50,8 @@ argr() {
 
 # TODO combine argr and argo into arg -[ro]
 argo() {
-        name="$1"; shift
+        name="$1"
+        shift
         eval "$name=\"\$1\""
 }
 
@@ -73,7 +76,6 @@ __cleanup() {
         debug "killing pgid '$pgid'"
         kill -- -"$pgid"
 }
-
 
 # The variable we use to check if our script has been shittified depends on the
 # script name, in case our shit script ever calls more shit scripts. We can't
@@ -106,7 +108,7 @@ fi
 
 # modify original script contents
 scriptmod="$(
-        2>/dev/null awk '
+        awk 2>/dev/null '
                 /^argr/ { $3="\"\$@\"; shift"; print; next }
                 /^argo/ { $3="\"\$@\"; shift 2>/dev/null"; print; next }
                 1

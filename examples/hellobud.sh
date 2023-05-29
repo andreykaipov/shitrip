@@ -1,8 +1,20 @@
 #!/bin/sh
 # shellcheck disable=SC2154
-command . shit.rip || eval "$(wget -qO- shit.rip)"
+#. ./shitrip.sh
+#command . shit.rip
 
-argr name
+# eval "$(wget -qO- shit.rip)"
+
+#argr name
+
+run() {
+        : "${image=$1}"
+        : "${image=$1}"
+
+}
+usage() {
+        echo hey
+}
 
 main() {
         echo "Hello bud, I am $name"

@@ -92,11 +92,25 @@ required_flag() {
         echo "1=$arg1; 2=$arg2; 3=$arg3; 4=$arg4"
 }
 
+###
+### augmented functions
+###
+# shellcheck disable=SC2154
+#
+# args: <first_name> [last_name] [--toggle] [--color=] --shape=... --compound-word=...
+augmented_abc() {
+        echo "first_name=$first_name"
+        echo "last_name=$last_name"
+        echo "toggle=$toggle"
+        echo "color=$color"
+        echo "shape=$shape"
+        echo "compound-word=$compound_word"
+}
+
 ####
 #### misc
 ####
 
-#
 # shows off multiple args
 #
 # switch case is important here
@@ -104,10 +118,17 @@ required_flag() {
 # multi line comment to show off help and first fn line comment usage
 #
 misc() {
+        echo "wow=$wow"
+        echo "hey=$hey"
         case $# in
                 0) echo nothing ;;
-                *) echo "${@=pizza}" ;;
+                *) for i in "${@=pizza}"; do echo "000: $i"; done ;;
+                        #*) echo : ;;
         esac
 }
+
+#
+# this will now show up
+misc_comment_usage_check() { :; }
 
 ####

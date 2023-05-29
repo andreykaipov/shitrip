@@ -4,7 +4,7 @@
 input=${1-$0}
 clishf=
 if [ -n "$CLISH_EXTRAS" ]; then
-        clishf=cli.sh
+        clishf=bin/bundle
 fi
 
 rawusage="$(awk -F '[()${}:=?]' "$usageawk" "$input" "$clishf")"

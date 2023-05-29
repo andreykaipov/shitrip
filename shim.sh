@@ -1,9 +1,8 @@
 #!/bin/sh
-# shellcheck disable=SC1090,SC1091
 
 debug() {
         if [ -z "$DEBUG" ]; then return; fi
-        >&2 echo "| shitrip.shim | $* "
+        echo >&2 "| shitrip.shim | $* "
 }
 
 # if you've got a : in one of your PATH directories, shit won't work.
@@ -19,8 +18,8 @@ for d in $PATH; do
 done
 
 if [ -z "$found" ]; then
-        >&2 "Couldn't find a writeable directory on your PATH"
-        >&2 "Bye"
+        "Couldn't find a writeable directory on your PATH" >&2
+        "Bye" >&2
         exit 1
 fi
 
@@ -30,14 +29,14 @@ get() {
         elif command -v curl >/dev/null; then
                 curl -sLo "$@"
         else
-                >&2 echo "Sorry - can't shit without wget or curl"
-                >&2 echo "How did you even run this without wget or curl?"
+                echo >&2 "Sorry - can't shit without wget or curl"
+                echo >&2 "How did you even run this without wget or curl?"
                 exit 1
         fi
 }
 
 debug "Vendoring shit into '$d'"
 
-get "$d/shit.rip" shit.rip/shit
+# get "$d/shit.rip" shit.rip/shit
 
-. shit.rip
+#. shit.rip
